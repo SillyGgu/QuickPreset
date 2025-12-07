@@ -1,0 +1,69 @@
+<div class="extension-block quick-preset-settings">
+    <div class="inline-drawer">
+        <div class="inline-drawer-toggle inline-drawer-header">
+            <b>퀵 프리셋 매니저</b>
+            <div class="inline-drawer-icon fa-solid fa-circle-chevron-down down"></div>
+        </div>
+
+        <div class="inline-drawer-content">
+            <div class="control-group">
+                <label class="checkbox_label">
+                    <input type="checkbox" id="quick_preset_enable">
+                    <span>확장 활성화</span>
+                </label>
+                <label class="checkbox_label">
+                    <input type="checkbox" id="quick_preset_show_wand">
+                    <span>하단 메뉴에 버튼 표시</span>
+                </label>
+            </div>
+
+            <hr class="sysHR">
+
+            <div class="control-group">
+                <div style="display: flex; gap: 10px; align-items: center; margin-bottom: 10px;">
+                    <label>크기(px): <input type="number" id="quick_preset_size" value="50" style="width: 60px;"></label>
+                    <label>색상: <input type="color" id="quick_preset_color" value="#6b82d8"></label>
+                </div>
+
+                <label><strong>위치 설정:</strong></label>
+                <select id="quick_preset_position_mode" style="width: 100%; margin-bottom: 10px;">
+                    <option value="br">오른쪽 아래 (고정)</option>
+                    <option value="bl">왼쪽 아래 (고정)</option>
+                    <option value="tr">오른쪽 위 (고정)</option>
+                    <option value="tl">왼쪽 위 (고정)</option>
+                    <option value="custom">커스텀 위치 (PC 드래그용)</option>
+                </select>
+
+                <div id="quick_preset_move_toggle_area" style="display: none; background: rgba(255,255,255,0.1); padding: 8px; border-radius: 5px;">
+                    <label class="checkbox_label" style="color: #242322;">
+                        <input type="checkbox" id="quick_preset_move_mode">
+                        <span><strong>버튼 위치 이동 모드 (켜면 버튼 작동 안함)</strong></span>
+                    </label>
+                    <small>※ 체크 후 화면의 버튼을 드래그하세요. 완료되면 체크 해제.</small>
+                </div>
+            </div>
+
+            <hr class="sysHR">
+
+            <div class="control-group">
+                <label><strong>새 프리셋 추가:</strong></label>
+                <div style="display: flex; gap: 5px; margin-bottom: 5px;">
+                    <select id="quick_preset_selector" style="flex: 1;">
+                        <option value="">-- 목록 불러오는 중 --</option>
+                    </select>
+                    <button id="quick_preset_refresh_btn" class="menu_button" title="목록 새로고침"><i class="fa-solid fa-sync"></i></button>
+                </div>
+                <button id="quick_preset_add_btn" class="menu_button" style="width: 100%; background-color: #6b82d8; color: white;">
+                    <i class="fa-solid fa-plus"></i> 목록에 추가하기
+                </button>
+            </div>
+
+            <div class="control-group">
+                <label><strong>저장된 프리셋 목록 (별칭 수정 가능):</strong></label>
+                <div id="quick_preset_list_container" class="preset-list-container">
+                    <div style="text-align: center; color: #888;">목록이 비어있습니다.</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

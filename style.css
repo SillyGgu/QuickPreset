@@ -1,0 +1,155 @@
+/* =========================================
+   컨테이너 및 버튼 스타일
+   ========================================= */
+#quick-preset-container {
+    position: fixed;
+    z-index: 2000;
+    display: flex;
+    flex-direction: column-reverse; /* 아래에서 위로 쌓임 */
+    gap: 10px;
+    padding: 5px;
+    
+    /* 기본값 (우측 하단) */
+    bottom: 20px;
+    right: 20px;
+    
+    /* 드래그 이동 시 부드러움 제거 (즉각 반응) */
+    transition: none; 
+}
+
+/* 위치 프리셋 클래스 (모바일용/고정용) */
+#quick-preset-container.pos-br { bottom: 20px; right: 20px; top: auto; left: auto; }
+#quick-preset-container.pos-bl { bottom: 20px; left: 20px; top: auto; right: auto; }
+#quick-preset-container.pos-tr { top: 80px; right: 20px; bottom: auto; left: auto; flex-direction: column; } /* 상단은 위에서 아래로 */
+#quick-preset-container.pos-tl { top: 80px; left: 20px; bottom: auto; right: auto; flex-direction: column; }
+
+/* 이동 모드 활성화 시 스타일 */
+#quick-preset-container.move-mode {
+    border: 2px dashed #ffcc00;
+    background-color: rgba(0, 0, 0, 0.3);
+    border-radius: 10px;
+    cursor: grab;
+}
+#quick-preset-container.move-mode:active {
+    cursor: grabbing;
+}
+#quick-preset-container.move-mode .quick-preset-btn {
+    pointer-events: none;
+    opacity: 0.7;
+}
+
+.quick-preset-btn {
+    /* CSS 변수로 크기/색상 제어 */
+    width: var(--qp-size, 50px);
+    height: var(--qp-size, 50px);
+    background-color: var(--qp-color, #6b82d8);
+    
+    color: white;
+    border-radius: 50%;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    
+    font-size: calc(var(--qp-size, 50px) * 0.4); 
+    font-weight: bold;
+    
+    transition: transform 0.2s, filter 0.2s;
+    user-select: none;
+    position: relative;
+}
+
+.quick-preset-btn:hover {
+    filter: brightness(1.1);
+    transform: scale(1.1);
+}
+.quick-preset-btn:active {
+    transform: scale(0.95);
+}
+
+/* 툴팁 */
+.quick-preset-btn::after {
+    /* JS에서 data-fullname에 별칭을 넣으므로 그대로 표시됨 */
+    content: attr(data-fullname);
+    position: absolute;
+    right: calc(var(--qp-size, 50px) + 10px);
+    top: 50%;
+    transform: translateY(-50%);
+    background: rgba(0,0,0,0.8);
+    color: #fff;
+    padding: 5px 10px;
+    border-radius: 5px;
+    font-size: 14px; /* 가독성을 위해 약간 키움 */
+    white-space: nowrap;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s;
+    z-index: 2001;
+}
+#quick-preset-container.pos-bl .quick-preset-btn::after,
+#quick-preset-container.pos-tl .quick-preset-btn::after {
+    right: auto;
+    left: calc(var(--qp-size, 50px) + 10px);
+}
+
+.quick-preset-btn:hover::after {
+    opacity: 1;
+}
+
+/* =========================================
+   설정창 UI
+   ========================================= */
+/* 요청 4: 검은 배경/Radius 제거 (투명하게 처리) */
+.quick-preset-settings .inline-drawer-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 5px; /* 패딩 약간 줄임 */
+    background: transparent; /* 배경 제거 */
+    border-radius: 0; /* 라디우스 제거 */
+    cursor: pointer;
+    margin-bottom: 0;
+    border-bottom: 1px solid var(--smart-theme-border); /* 구분선 추가 */
+}
+.quick-preset-settings .inline-drawer-content {
+    background: rgba(0, 0, 0, 0.1); /* 컨텐츠 배경을 약간 연하게 */
+    padding: 15px;
+    border-radius: 0 0 10px 10px;
+    margin-bottom: 15px;
+}
+
+.preset-list-container {
+    max-height: 250px;
+    overflow-y: auto;
+    background: rgba(0, 0, 0, 0.1);
+    border: 1px solid var(--smart-theme-border);
+    border-radius: 5px;
+    padding: 5px;
+    margin-top: 10px;
+}
+.preset-list-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px;
+    background: var(--smart-theme-content-bg);
+    border-bottom: 1px solid var(--smart-theme-border);
+    border-radius: 4px;
+    margin-bottom: 5px;
+}
+.preset-list-item input[type="text"] {
+    padding: 4px;
+    border: 1px solid var(--smart-theme-border);
+    background: var(--smart-theme-input-bg);
+    color: var(--smart-theme-body-color);
+    border-radius: 4px;
+}
+.menu_button {
+    padding: 8px 12px;
+    border-radius: 5px;
+    border: 1px solid var(--smart-theme-border);
+    cursor: pointer;
+    background-color: var(--smart-theme-bg);
+    color: var(--smart-theme-body-color);
+}
