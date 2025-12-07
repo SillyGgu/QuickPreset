@@ -115,6 +115,7 @@ function updateFloatingButtons() {
     }
 
     settings.presetList.forEach((preset, index) => {
+        // 1. 버튼에 표시될 텍스트 (symbol 우선 -> alias -> name)
         let displayText = '';
         if (preset.symbol && preset.symbol.trim() !== '') {
             displayText = preset.symbol; 
@@ -124,6 +125,7 @@ function updateFloatingButtons() {
             displayText = preset.name.substring(0, 2);
         }
 
+        // 2. 툴팁에 표시될 텍스트 (alias 우선 -> name)
         let tooltipText = (preset.alias && preset.alias.trim() !== '') ? preset.alias : preset.name;
 
         const btnHtml = `
@@ -150,31 +152,62 @@ function updateFloatingButtons() {
 function enableDrag($element) {
     let isDragging = false;
     let startX, startY, startLeft, startTop;
+    const windowPadding = 5; // 버튼이 화면 경계에서 완전히 벗어나는 것을 방지
 
-    $element.on('mousedown', function(e) {
+    $element.on('mousedown touchstart', function(e) {
         if (!settings.moveMode) return;
         
         isDragging = true;
+        // 터치 이벤트 대응
+        const event = e.originalEvent.touches ? e.originalEvent.touches[0] : e;
         const rect = $element[0].getBoundingClientRect();
         
         startLeft = rect.left;
         startTop = rect.top;
-        startX = e.clientX;
-        startY = e.clientY;
+        startX = event.clientX;
+        startY = event.clientY;
 
-        $(document).on('mousemove.qp_drag', function(moveEvent) {
+        $(document).on('mousemove.qp_drag touchmove.qp_drag', function(moveEvent) {
             if (!isDragging) return;
-            const deltaX = moveEvent.clientX - startX;
-            const deltaY = moveEvent.clientY - startY;
-            $element.css({ left: (startLeft + deltaX) + 'px', top: (startTop + deltaY) + 'px', right: 'auto', bottom: 'auto' });
+            
+            const moveEventData = moveEvent.originalEvent.touches ? moveEvent.originalEvent.touches[0] : moveEvent;
+            const deltaX = moveEventData.clientX - startX;
+            const deltaY = moveEventData.clientY - startY;
+            
+            let newLeft = startLeft + deltaX;
+            let newTop = startTop + deltaY;
+
+            // 경계 체크 및 조정
+            const maxLeft = window.innerWidth - rect.width - windowPadding;
+            const maxTop = window.innerHeight - rect.height - windowPadding;
+
+            newLeft = Math.max(windowPadding, Math.min(newLeft, maxLeft));
+            newTop = Math.max(windowPadding, Math.min(newTop, maxTop));
+            
+            $element.css({ 
+                left: newLeft + 'px', 
+                top: newTop + 'px', 
+                right: 'auto', 
+                bottom: 'auto' 
+            });
+            
+            if (moveEvent.originalEvent.touches) {
+                moveEvent.preventDefault(); 
+            }
         });
 
-        $(document).on('mouseup.qp_drag', function() {
+        $(document).on('mouseup.qp_drag touchend.qp_drag', function() {
             if (isDragging) {
                 isDragging = false;
-                $(document).off('mousemove.qp_drag mouseup.qp_drag');
+                $(document).off('mousemove.qp_drag touchmove.qp_drag mouseup.qp_drag touchend.qp_drag');
+                
                 const rect = $element[0].getBoundingClientRect();
-                settings.customPos = { top: rect.top + 'px', left: rect.left + 'px', bottom: 'auto', right: 'auto' };
+                settings.customPos = { 
+                    top: rect.top + 'px', 
+                    left: rect.left + 'px', 
+                    bottom: 'auto', 
+                    right: 'auto' 
+                };
                 saveSettingsDebounced();
             }
         });
@@ -185,6 +218,7 @@ function enableDrag($element) {
 function applyPreset(presetData) {
     const $stDropdown = $('#settings_preset_openai');
     const targetName = presetData.name;
+    // 표시용 이름: 별칭이 있으면 별칭, 없으면 원래 이름
     const displayName = (presetData.alias && presetData.alias.trim() !== '') ? presetData.alias : targetName;
 
     if ($stDropdown.length === 0) {
@@ -258,6 +292,7 @@ function renderPresetListUI() {
         $listContainer.append(itemHtml);
     });
 
+    // 입력 이벤트 (별칭)
     $('.preset-alias-input').on('input', function() {
         const index = $(this).data('index');
         settings.presetList[index].alias = $(this).val();
@@ -265,6 +300,7 @@ function renderPresetListUI() {
         updateFloatingButtons();
     });
 
+    // 입력 이벤트 (버튼 심볼)
     $('.preset-symbol-input').on('input', function() {
         const index = $(this).data('index');
         settings.presetList[index].symbol = $(this).val();
@@ -272,6 +308,7 @@ function renderPresetListUI() {
         updateFloatingButtons();
     });
 
+    // 삭제 버튼
     $('.preset-delete-btn').on('click', function() {
         const index = $(this).data('index');
         settings.presetList.splice(index, 1);
@@ -296,7 +333,6 @@ function onSettingChange() {
     settings.positionMode = $('#quick_preset_position_mode').val();
     settings.moveMode = $('#quick_preset_move_mode').prop('checked');
 
-    // 위치 모드에 따라 이동 모드 토글 표시 여부 결정
     if (settings.positionMode === 'custom') {
         $('#quick_preset_move_toggle_area').slideDown();
     } else {
@@ -319,13 +355,15 @@ function onSettingChange() {
     if (!Array.isArray(settings.presetList)) settings.presetList = [];
     if (!settings.customPos) settings.customPos = DEFAULT_SETTINGS.customPos;
     if (settings.showWandButton === undefined) settings.showWandButton = true;
-    
-    // 안전장치: 현재 설정값이 Dropdown에 없는 값(br, bl)이라면 'custom'으로 강제 변경
-    if (['br', 'bl'].includes(settings.positionMode)) {
+
+    if (['br', 'bl', undefined, null, ''].includes(settings.positionMode)) {
         settings.positionMode = 'custom';
     }
-    // 값이 없으면 기본값 적용
-    if (!settings.positionMode) settings.positionMode = 'custom';
+
+    settings.presetList.forEach(p => {
+        if (p.alias === undefined) p.alias = '';
+        if (p.symbol === undefined) p.symbol = ''; 
+    });
 
     await addToWandMenu();
     updateFloatingButtons();
@@ -346,7 +384,8 @@ function onSettingChange() {
         if (!val) return toastr.warning('선택된 프리셋이 없습니다.');
         if (settings.presetList.some(p => p.name === val)) return toastr.info('이미 추가된 프리셋입니다.');
         
-        settings.presetList.push({ name: val, alias: '', symbol: '' });
+        // Add new fields (alias, symbol)
+        settings.presetList.push({ name: val, alias: '', symbol: '' }); 
         saveSettingsDebounced();
         renderPresetListUI();
         updateFloatingButtons();
@@ -364,5 +403,5 @@ function onSettingChange() {
     renderPresetListUI();
     setTimeout(syncPresetOptions, 2000);
 
-    console.log(`[${extensionName}] loaded v2.2.`);
+    console.log(`[${extensionName}] loaded v2.3.`);
 })();
