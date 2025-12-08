@@ -20,9 +20,9 @@ const DEFAULT_SETTINGS = {
     buttonSize: 50,
     buttonColor: '#6b82d8',
     
-    // 위치 설정 (기본값을 custom으로 변경)
+    // 위치 설정
     positionMode: 'custom', 
-    customPos: { top: null, left: null, right: '20px', bottom: '150px' }, // 커스텀 기본값 (하단 바에 가리지 않게 약간 위로)
+    customPos: { top: null, left: null, right: '20px', bottom: '150px' },
     
     moveMode: false
 };
@@ -78,7 +78,7 @@ function updateWandButtonStatus() {
 
 
 // ==========================================
-// 2. 메인: 플로팅 버튼 관리 & 드래그
+// 2. 메인: 플로팅 버튼 관리 (접힘/펼침 구현)
 // ==========================================
 
 function updateFloatingButtons() {
@@ -88,31 +88,73 @@ function updateFloatingButtons() {
         return;
     }
 
+    // 컨테이너 생성
     const containerHtml = `<div id="quick-preset-container"></div>`;
     $('body').append(containerHtml);
     const $container = $('#quick-preset-container');
 
+    // CSS 변수 적용
     $container[0].style.setProperty('--qp-size', `${settings.buttonSize}px`);
     $container[0].style.setProperty('--qp-color', settings.buttonColor);
 
-    $container.removeClass('pos-tl pos-tr pos-bl pos-br move-mode');
-    
+    // 1. 위치 모드 및 앵커 결정 (위쪽 기준인지 아래쪽 기준인지)
+    let isAnchorTop = false; // 기본은 아래쪽(Bottom) 기준
+    let isLeftSide = false;  // 툴팁 방향 결정을 위해
+
     if (settings.positionMode === 'custom') {
+        const topVal = settings.customPos.top;
+        const bottomVal = settings.customPos.bottom;
+        const leftVal = settings.customPos.left;
+
+        // Custom 위치일 때, Top값이 설정되어 있고 auto가 아니면 Top 앵커로 간주
+        // (사용자가 화면 위쪽에 두었으면 아래로 펼쳐져야 함)
+        if (topVal && topVal !== 'auto') isAnchorTop = true;
+        
+        // 왼쪽 여백이 있으면(화면 왼쪽) 툴팁을 오른쪽으로
+        if (leftVal && leftVal !== 'auto') isLeftSide = true;
+
         $container.css({
             top: settings.customPos.top || 'auto',
             left: settings.customPos.left || 'auto',
             bottom: settings.customPos.bottom || 'auto',
             right: settings.customPos.right || 'auto'
         });
-        
+
         if (settings.moveMode) {
             $container.addClass('move-mode');
             enableDrag($container);
         }
     } else {
-        $container.addClass(`pos-${settings.positionMode}`);
-        $container.css({ top: '', left: '', bottom: '', right: '' });
+        // 고정 위치 프리셋
+        if (settings.positionMode === 'tr') { 
+            $container.css({ top: '80px', right: '20px', bottom: 'auto', left: 'auto' });
+            isAnchorTop = true; 
+        } else if (settings.positionMode === 'tl') {
+            $container.css({ top: '80px', left: '20px', bottom: 'auto', right: 'auto' });
+            isAnchorTop = true;
+            isLeftSide = true;
+        } else if (settings.positionMode === 'bl') {
+            $container.css({ bottom: '20px', left: '20px', top: 'auto', right: 'auto' });
+            isLeftSide = true;
+        } else { // br (default)
+            $container.css({ bottom: '20px', right: '20px', top: 'auto', left: 'auto' });
+        }
     }
+
+    // 2. 클래스 부여 (CSS Flex 방향 제어용)
+    $container.addClass(isAnchorTop ? 'anchor-top' : 'anchor-bottom');
+    if (isLeftSide) $container.addClass('pos-left');
+
+    // 3. 메인 버튼 (항상 보임)
+    // 아이콘: 메뉴 모양 (bars) 혹은 레이어 모양
+    const $mainBtn = $(`
+        <div class="quick-preset-main-btn" title="프리셋 메뉴">
+            <i class="fa-solid fa-bars"></i>
+        </div>
+    `);
+
+    // 4. 프리셋 리스트 래퍼 (평소 숨김, 호버시 보임)
+    const $listWrapper = $(`<div class="quick-preset-list-wrapper"></div>`);
 
     settings.presetList.forEach((preset, index) => {
         let displayText = '';
@@ -131,10 +173,22 @@ function updateFloatingButtons() {
                 <span>${displayText}</span>
             </div>
         `;
-        $container.append(btnHtml);
+        $listWrapper.append(btnHtml);
     });
 
-    $('.quick-preset-btn').on('click', function(e) {
+    // 5. DOM 조립
+    // anchor-bottom(하단 고정)일 때: [리스트 래퍼] -> [메인 버튼] 순서로 넣음 (CSS에서 flex-direction: column-reverse로 처리하여 메인이 아래로 감)
+    // anchor-top(상단 고정)일 때: [메인 버튼] -> [리스트 래퍼] (CSS flex-direction: column)
+    // => HTML 구조는 동일하게 넣고 CSS flex-direction으로 순서만 바꾸는 게 깔끔함.
+    
+    // 하지만 CSS의 visual order와 상관없이 스크린리더나 논리적 순서를 위해
+    // HTML에 "메인 버튼" -> "리스트" 순서로 넣고 CSS로 제어하겠습니다.
+    $container.append($listWrapper);
+    $container.append($mainBtn);
+
+
+    // 이벤트 바인딩
+    $container.find('.quick-preset-btn').on('click', function(e) {
         if (settings.positionMode === 'custom' && settings.moveMode) {
             e.preventDefault();
             e.stopPropagation();
@@ -174,8 +228,14 @@ function enableDrag($element) {
                 isDragging = false;
                 $(document).off('mousemove.qp_drag mouseup.qp_drag');
                 const rect = $element[0].getBoundingClientRect();
+                
+                // 위치 저장 시 top/bottom 판별 로직
+                // 화면 절반보다 위에 있으면 Top 기준, 아래면 Bottom 기준으로 저장하면 반응형에 유리할 수 있으나
+                // 단순화를 위해 현재 좌표 그대로 저장합니다.
                 settings.customPos = { top: rect.top + 'px', left: rect.left + 'px', bottom: 'auto', right: 'auto' };
                 saveSettingsDebounced();
+                // 드래그 후 위치에 따라 펼쳐지는 방향 재계산을 위해 업데이트
+                updateFloatingButtons(); 
             }
         });
         e.preventDefault();
@@ -236,21 +296,33 @@ function renderPresetListUI() {
     settings.presetList.forEach((preset, index) => {
         const alias = preset.alias || '';
         const symbol = preset.symbol || '';
+        const isFirst = index === 0;
+        const isLast = index === settings.presetList.length - 1;
         
         const itemHtml = `
             <div class="preset-list-item">
+                <div style="display:flex; flex-direction:column; gap:2px; align-items: center;">
+                    <button class="menu_button preset-move-btn" data-dir="up" data-index="${index}" ${isFirst ? 'disabled style="opacity:0.3"' : ''} title="위로 이동">
+                        <i class="fa-solid fa-chevron-up"></i>
+                    </button>
+                    <button class="menu_button preset-move-btn" data-dir="down" data-index="${index}" ${isLast ? 'disabled style="opacity:0.3"' : ''} title="아래로 이동">
+                        <i class="fa-solid fa-chevron-down"></i>
+                    </button>
+                </div>
+
                 <div style="flex:1; display:flex; flex-direction:column; gap:2px;">
                     <div style="font-size:0.8em; color:#aaa; margin-bottom: 2px;">원본: ${preset.name}</div>
                     <div style="display:flex; gap: 5px;">
                         <input type="text" class="preset-symbol-input" data-index="${index}" 
                                style="width: 60px; text-align:center;"
-                               placeholder="버튼모양" value="${symbol}" title="버튼 위에 표시될 짧은 텍스트나 이모지 (예: ❤️)">
+                               placeholder="모양" value="${symbol}" title="버튼 글자/이모지">
                         <input type="text" class="preset-alias-input" data-index="${index}" 
                                style="flex:1;"
-                               placeholder="별칭 (툴팁/알림용)" value="${alias}" title="마우스 오버 및 적용 완료 시 표시될 이름">
+                               placeholder="별칭" value="${alias}" title="설명(툴팁)">
                     </div>
                 </div>
-                <button class="preset-delete-btn menu_button" style="color: #e74c3c; height: fit-content; align-self: center;" data-index="${index}">
+                
+                <button class="preset-delete-btn menu_button" style="color: #e74c3c; height: fit-content; align-self: center;" data-index="${index}" title="삭제">
                     <i class="fa-solid fa-trash"></i>
                 </button>
             </div>
@@ -258,11 +330,12 @@ function renderPresetListUI() {
         $listContainer.append(itemHtml);
     });
 
+    // 이벤트 리스너
     $('.preset-alias-input').on('input', function() {
         const index = $(this).data('index');
         settings.presetList[index].alias = $(this).val();
         saveSettingsDebounced();
-        updateFloatingButtons();
+        updateFloatingButtons(); // 실시간 반영
     });
 
     $('.preset-symbol-input').on('input', function() {
@@ -275,6 +348,28 @@ function renderPresetListUI() {
     $('.preset-delete-btn').on('click', function() {
         const index = $(this).data('index');
         settings.presetList.splice(index, 1);
+        saveSettingsDebounced();
+        renderPresetListUI();
+        updateFloatingButtons();
+    });
+
+    // 순서 변경 버튼 로직
+    $('.preset-move-btn').on('click', function() {
+        const index = $(this).data('index');
+        const dir = $(this).data('dir');
+        
+        if (dir === 'up' && index > 0) {
+            // Swap
+            [settings.presetList[index], settings.presetList[index - 1]] = 
+            [settings.presetList[index - 1], settings.presetList[index]];
+        } else if (dir === 'down' && index < settings.presetList.length - 1) {
+            // Swap
+            [settings.presetList[index], settings.presetList[index + 1]] = 
+            [settings.presetList[index + 1], settings.presetList[index]];
+        } else {
+            return;
+        }
+
         saveSettingsDebounced();
         renderPresetListUI();
         updateFloatingButtons();
@@ -296,7 +391,6 @@ function onSettingChange() {
     settings.positionMode = $('#quick_preset_position_mode').val();
     settings.moveMode = $('#quick_preset_move_mode').prop('checked');
 
-    // 위치 모드에 따라 이동 모드 토글 표시 여부 결정
     if (settings.positionMode === 'custom') {
         $('#quick_preset_move_toggle_area').slideDown();
     } else {
@@ -320,11 +414,9 @@ function onSettingChange() {
     if (!settings.customPos) settings.customPos = DEFAULT_SETTINGS.customPos;
     if (settings.showWandButton === undefined) settings.showWandButton = true;
     
-    // 안전장치: 현재 설정값이 Dropdown에 없는 값(br, bl)이라면 'custom'으로 강제 변경
     if (['br', 'bl'].includes(settings.positionMode)) {
         settings.positionMode = 'custom';
     }
-    // 값이 없으면 기본값 적용
     if (!settings.positionMode) settings.positionMode = 'custom';
 
     await addToWandMenu();
@@ -364,5 +456,5 @@ function onSettingChange() {
     renderPresetListUI();
     setTimeout(syncPresetOptions, 2000);
 
-    console.log(`[${extensionName}] loaded v2.2.`);
+    console.log(`[${extensionName}] loaded v2.3.`);
 })();

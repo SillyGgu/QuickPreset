@@ -4,24 +4,18 @@
 #quick-preset-container {
     position: fixed;
     z-index: 2000;
-    display: flex;
-    flex-direction: column-reverse; /* 아래에서 위로 쌓임 */
-    gap: 10px;
-    padding: 5px;
-    
-    /* 기본값 (우측 하단) */
+    padding: 10px;
+
     bottom: 20px;
     right: 20px;
-    
-    /* 드래그 이동 시 부드러움 제거 (즉각 반응) */
-    transition: none; 
+
+    display: flex;
+    flex-direction: column; /* 기본값 */
+    align-items: center;
+
+    /* 리스트는 absolute니까 레이아웃 영향 없음 */
 }
 
-/* 위치 프리셋 클래스 (모바일용/고정용) */
-#quick-preset-container.pos-br { bottom: 20px; right: 20px; top: auto; left: auto; }
-#quick-preset-container.pos-bl { bottom: 20px; left: 20px; top: auto; right: auto; }
-#quick-preset-container.pos-tr { top: 80px; right: 20px; bottom: auto; left: auto; flex-direction: column; } /* 상단은 위에서 아래로 */
-#quick-preset-container.pos-tl { top: 80px; left: 20px; bottom: auto; right: auto; flex-direction: column; }
 
 /* 이동 모드 활성화 시 스타일 */
 #quick-preset-container.move-mode {
@@ -33,17 +27,19 @@
 #quick-preset-container.move-mode:active {
     cursor: grabbing;
 }
-#quick-preset-container.move-mode .quick-preset-btn {
+#quick-preset-container.move-mode .quick-preset-btn,
+#quick-preset-container.move-mode .quick-preset-main-btn {
     pointer-events: none;
     opacity: 0.7;
 }
 
-.quick-preset-btn {
-    /* CSS 변수로 크기/색상 제어 */
+/* =========================================
+   버튼 공통 스타일
+   ========================================= */
+.quick-preset-btn, .quick-preset-main-btn {
     width: var(--qp-size, 50px);
     height: var(--qp-size, 50px);
     background-color: var(--qp-color, #6b82d8);
-    
     color: white;
     border-radius: 50%;
     box-shadow: 0 4px 10px rgba(0,0,0,0.3);
@@ -51,69 +47,109 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    
     font-size: calc(var(--qp-size, 50px) * 0.4); 
     font-weight: bold;
-    
     transition: transform 0.2s, filter 0.2s;
     user-select: none;
     position: relative;
+    flex-shrink: 0;
 }
 
-.quick-preset-btn:hover {
+.quick-preset-btn:hover, .quick-preset-main-btn:hover {
     filter: brightness(1.1);
     transform: scale(1.1);
 }
-.quick-preset-btn:active {
+.quick-preset-btn:active, .quick-preset-main-btn:active {
     transform: scale(0.95);
 }
 
+/* 메인 버튼(메뉴 아이콘) 스타일 */
+.quick-preset-main-btn {
+    z-index: 2002;
+}
+
+/* =========================================
+   프리셋 리스트 (접힘/펼침 영역)
+   ========================================= */
+.quick-preset-list-wrapper {
+    position: absolute;
+    bottom: calc(var(--qp-size, 50px) + 15px); /* ← 살짝 올림 (겹침 방지) */
+
+    left: 50%;
+    transform: translateX(-50%) scaleY(0.8);
+    transform-origin: bottom center;
+
+    display: flex;
+    flex-direction: column;
+    gap: 10px;                   /* ← 기존 간격 그대로 유지 */
+
+    opacity: 0;
+    visibility: hidden;
+
+    transition: all 0.2s ease-in-out;
+
+    pointer-events: none;
+
+    padding-top: 5px;            /* ← 기존 유지 */
+    padding-bottom: 5px;         /* ← 기존 유지 */
+}
+
+
+#quick-preset-container:hover .quick-preset-list-wrapper {
+    opacity: 1;
+    visibility: visible;
+    transform: translateX(-50%) scaleY(1);
+    pointer-events: auto;
+}
+
+
 /* 툴팁 */
 .quick-preset-btn::after {
-    /* JS에서 data-fullname에 별칭을 넣으므로 그대로 표시됨 */
+    /* (이하 툴팁 스타일은 변경 없음) */
     content: attr(data-fullname);
     position: absolute;
-    right: calc(var(--qp-size, 50px) + 10px);
+    right: calc(var(--qp-size, 50px) + 15px);
     top: 50%;
     transform: translateY(-50%);
     background: rgba(0,0,0,0.8);
     color: #fff;
     padding: 5px 10px;
     border-radius: 5px;
-    font-size: 14px; /* 가독성을 위해 약간 키움 */
+    font-size: 14px;
     white-space: nowrap;
     opacity: 0;
     pointer-events: none;
     transition: opacity 0.2s;
     z-index: 2001;
 }
-#quick-preset-container.pos-bl .quick-preset-btn::after,
-#quick-preset-container.pos-tl .quick-preset-btn::after {
+
+/* 컨테이너 위치에 따른 툴팁 방향 자동 조정 */
+#quick-preset-container.pos-left .quick-preset-btn::after {
     right: auto;
-    left: calc(var(--qp-size, 50px) + 10px);
+    left: calc(var(--qp-size, 50px) + 15px);
 }
 
 .quick-preset-btn:hover::after {
     opacity: 1;
 }
 
+
 /* =========================================
    설정창 UI
    ========================================= */
-/* 요청 4: 검은 배경/Radius 제거 (투명하게 처리) */
 .quick-preset-settings .inline-drawer-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 10px 5px; /* 패딩 약간 줄임 */
-    background: transparent; /* 배경 제거 */
-    border-radius: 0; /* 라디우스 제거 */
+    padding: 10px 5px;
+    background: transparent;
+    border-radius: 0;
     cursor: pointer;
     margin-bottom: 0;
-    border-bottom: 1px solid var(--smart-theme-border); /* 구분선 추가 */
+    border-bottom: 1px solid var(--smart-theme-border);
 }
 .quick-preset-settings .inline-drawer-content {
-    background: rgba(0, 0, 0, 0.1); /* 컨텐츠 배경을 약간 연하게 */
+    background: rgba(0, 0, 0, 0.1);
     padding: 15px;
     border-radius: 0 0 10px 10px;
     margin-bottom: 15px;
@@ -131,7 +167,7 @@
 .preset-list-item {
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 8px;
     padding: 8px;
     background: var(--smart-theme-content-bg);
     border-bottom: 1px solid var(--smart-theme-border);
@@ -146,10 +182,14 @@
     border-radius: 4px;
 }
 .menu_button {
-    padding: 8px 12px;
+    padding: 6px 10px;
     border-radius: 5px;
     border: 1px solid var(--smart-theme-border);
     cursor: pointer;
     background-color: var(--smart-theme-bg);
     color: var(--smart-theme-body-color);
+    font-size: 0.9em;
+}
+.menu_button:hover {
+    background-color: var(--smart-theme-input-bg);
 }
