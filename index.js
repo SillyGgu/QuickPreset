@@ -14,7 +14,7 @@ const extensionFolderPath = `scripts/extensions/third-party/${extensionName}`;
 const DEFAULT_SETTINGS = {
     enabled: true,
     showWandButton: true,
-    presetList: [], // { name: '...', alias: '...', symbol: '...' }
+    presetList: [], 
     
     // 스타일 설정
     buttonSize: 50,
@@ -24,14 +24,14 @@ const DEFAULT_SETTINGS = {
     positionMode: 'custom', 
     customPos: { top: null, left: null, right: '20px', bottom: '150px' },
     
-    moveMode: false
+    moveMode: false,
+    expandDown: false // [추가] 기본값: 위로 펼침(false)
 };
 
 let settings = {};
 
-// ==========================================
-// 1. 요술봉(Wand) 메뉴 로직
-// ==========================================
+// ... (addToWandMenu 등 기존 코드 유지) ...
+
 async function addToWandMenu() {
     if ($('#quick_preset_wand_button').length > 0) return;
 
@@ -97,20 +97,20 @@ function updateFloatingButtons() {
     $container[0].style.setProperty('--qp-size', `${settings.buttonSize}px`);
     $container[0].style.setProperty('--qp-color', settings.buttonColor);
 
+    // [추가] 아래로 펼치기 클래스 적용
+    if (settings.expandDown) {
+        $container.addClass('expand-down');
+    }
+
     // 1. 위치 모드 및 앵커 결정 (위쪽 기준인지 아래쪽 기준인지)
-    let isAnchorTop = false; // 기본은 아래쪽(Bottom) 기준
-    let isLeftSide = false;  // 툴팁 방향 결정을 위해
+    let isAnchorTop = false; 
+    let isLeftSide = false;
 
     if (settings.positionMode === 'custom') {
         const topVal = settings.customPos.top;
-        const bottomVal = settings.customPos.bottom;
         const leftVal = settings.customPos.left;
 
-        // Custom 위치일 때, Top값이 설정되어 있고 auto가 아니면 Top 앵커로 간주
-        // (사용자가 화면 위쪽에 두었으면 아래로 펼쳐져야 함)
         if (topVal && topVal !== 'auto') isAnchorTop = true;
-        
-        // 왼쪽 여백이 있으면(화면 왼쪽) 툴팁을 오른쪽으로
         if (leftVal && leftVal !== 'auto') isLeftSide = true;
 
         $container.css({
@@ -141,19 +141,15 @@ function updateFloatingButtons() {
         }
     }
 
-    // 2. 클래스 부여 (CSS Flex 방향 제어용)
     $container.addClass(isAnchorTop ? 'anchor-top' : 'anchor-bottom');
     if (isLeftSide) $container.addClass('pos-left');
 
-    // 3. 메인 버튼 (항상 보임)
-    // 아이콘: 메뉴 모양 (bars) 혹은 레이어 모양
     const $mainBtn = $(`
         <div class="quick-preset-main-btn" title="프리셋 메뉴">
             <i class="fa-solid fa-bars"></i>
         </div>
     `);
 
-    // 4. 프리셋 리스트 래퍼 (평소 숨김, 호버시 보임)
     const $listWrapper = $(`<div class="quick-preset-list-wrapper"></div>`);
 
     settings.presetList.forEach((preset, index) => {
@@ -176,18 +172,10 @@ function updateFloatingButtons() {
         $listWrapper.append(btnHtml);
     });
 
-    // 5. DOM 조립
-    // anchor-bottom(하단 고정)일 때: [리스트 래퍼] -> [메인 버튼] 순서로 넣음 (CSS에서 flex-direction: column-reverse로 처리하여 메인이 아래로 감)
-    // anchor-top(상단 고정)일 때: [메인 버튼] -> [리스트 래퍼] (CSS flex-direction: column)
-    // => HTML 구조는 동일하게 넣고 CSS flex-direction으로 순서만 바꾸는 게 깔끔함.
-    
-    // 하지만 CSS의 visual order와 상관없이 스크린리더나 논리적 순서를 위해
-    // HTML에 "메인 버튼" -> "리스트" 순서로 넣고 CSS로 제어하겠습니다.
     $container.append($listWrapper);
     $container.append($mainBtn);
 
 
-    // 이벤트 바인딩
     $container.find('.quick-preset-btn').on('click', function(e) {
         if (settings.positionMode === 'custom' && settings.moveMode) {
             e.preventDefault();
@@ -200,6 +188,8 @@ function updateFloatingButtons() {
         applyPreset(presetData);
     });
 }
+
+// ... (enableDrag, applyPreset 등 기존 함수 유지) ...
 
 function enableDrag($element) {
     let isDragging = false;
@@ -229,12 +219,8 @@ function enableDrag($element) {
                 $(document).off('mousemove.qp_drag mouseup.qp_drag');
                 const rect = $element[0].getBoundingClientRect();
                 
-                // 위치 저장 시 top/bottom 판별 로직
-                // 화면 절반보다 위에 있으면 Top 기준, 아래면 Bottom 기준으로 저장하면 반응형에 유리할 수 있으나
-                // 단순화를 위해 현재 좌표 그대로 저장합니다.
                 settings.customPos = { top: rect.top + 'px', left: rect.left + 'px', bottom: 'auto', right: 'auto' };
                 saveSettingsDebounced();
-                // 드래그 후 위치에 따라 펼쳐지는 방향 재계산을 위해 업데이트
                 updateFloatingButtons(); 
             }
         });
@@ -263,9 +249,7 @@ function applyPreset(presetData) {
 }
 
 
-// ==========================================
-// 3. 설정창(Settings) UI 로직
-// ==========================================
+// ... (설정 UI 로직) ...
 
 function syncPresetOptions() {
     const $stDropdown = $('#settings_preset_openai');
@@ -359,11 +343,9 @@ function renderPresetListUI() {
         const dir = $(this).data('dir');
         
         if (dir === 'up' && index > 0) {
-            // Swap
             [settings.presetList[index], settings.presetList[index - 1]] = 
             [settings.presetList[index - 1], settings.presetList[index]];
         } else if (dir === 'down' && index < settings.presetList.length - 1) {
-            // Swap
             [settings.presetList[index], settings.presetList[index + 1]] = 
             [settings.presetList[index + 1], settings.presetList[index]];
         } else {
@@ -390,6 +372,9 @@ function onSettingChange() {
     
     settings.positionMode = $('#quick_preset_position_mode').val();
     settings.moveMode = $('#quick_preset_move_mode').prop('checked');
+    
+    // [추가] 아래로 펼치기 값 읽기
+    settings.expandDown = $('#quick_preset_expand_down').prop('checked');
 
     if (settings.positionMode === 'custom') {
         $('#quick_preset_move_toggle_area').slideDown();
@@ -404,16 +389,14 @@ function onSettingChange() {
     updateAll();
 }
 
-// ==========================================
-// 4. 초기화
-// ==========================================
 (async function() {
     settings = extension_settings[extensionName] = extension_settings[extensionName] || DEFAULT_SETTINGS;
     
     if (!Array.isArray(settings.presetList)) settings.presetList = [];
     if (!settings.customPos) settings.customPos = DEFAULT_SETTINGS.customPos;
     if (settings.showWandButton === undefined) settings.showWandButton = true;
-    
+    if (settings.expandDown === undefined) settings.expandDown = false; // [추가] 초기화
+
     if (['br', 'bl'].includes(settings.positionMode)) {
         settings.positionMode = 'custom';
     }
@@ -425,7 +408,8 @@ function onSettingChange() {
     const settingsHtml = await $.get(`${extensionFolderPath}/settings.html`);
     $("#extensions_settings2").append(settingsHtml);
 
-    $('#quick_preset_enable, #quick_preset_show_wand, #quick_preset_move_mode').on('change', onSettingChange);
+    // [수정] 이벤트 리스너에 #quick_preset_expand_down 추가
+    $('#quick_preset_enable, #quick_preset_show_wand, #quick_preset_move_mode, #quick_preset_expand_down').on('change', onSettingChange);
     $('#quick_preset_size, #quick_preset_color, #quick_preset_position_mode').on('input change', onSettingChange);
     
     $('#quick_preset_refresh_btn').on('click', () => {
@@ -450,6 +434,9 @@ function onSettingChange() {
     $('#quick_preset_color').val(settings.buttonColor);
     $('#quick_preset_position_mode').val(settings.positionMode);
     $('#quick_preset_move_mode').prop('checked', settings.moveMode);
+    
+    // [추가] 초기 체크박스 상태 반영
+    $('#quick_preset_expand_down').prop('checked', settings.expandDown);
     
     if (settings.positionMode === 'custom') $('#quick_preset_move_toggle_area').show();
 

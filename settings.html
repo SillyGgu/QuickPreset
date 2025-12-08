@@ -26,11 +26,16 @@
                 </div>
 
                 <label><strong>위치 설정:</strong></label>
-                <select id="quick_preset_position_mode" style="width: 100%; margin-bottom: 10px;">
+                <select id="quick_preset_position_mode" style="width: 100%; margin-bottom: 5px;">
                     <option value="custom">커스텀 위치 (자유 이동)</option>
                     <option value="tr">오른쪽 위 (고정)</option>
                     <option value="tl">왼쪽 위 (고정)</option>
                 </select>
+
+                <label class="checkbox_label" style="margin-bottom: 10px;">
+                    <input type="checkbox" id="quick_preset_expand_down">
+                    <span>리스트 아래로 펼치기</span>
+                </label>
 
                 <div id="quick_preset_move_toggle_area" style="display: none; background: rgba(255,255,255,0.1); padding: 8px; border-radius: 5px;">
                     <label class="checkbox_label" style="color: #242322;">
