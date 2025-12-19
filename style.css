@@ -5,44 +5,35 @@
     position: fixed;
     z-index: 2000;
     padding: 10px;
-
     bottom: 20px;
     right: 20px;
-
     display: flex;
-    flex-direction: column; /* 기본값 */
+    flex-direction: column;
     align-items: center;
-
-    /* 리스트는 absolute니까 레이아웃 영향 없음 */
 }
 
-
-/* 이동 모드 활성화 시 스타일 */
 #quick-preset-container.move-mode {
-    border: 2px dashed #ffcc00;
-    background-color: rgba(0, 0, 0, 0.3);
+    border: 2px dashed #c9b86e;
+    background-color: rgba(238, 242, 239, 0.9);
     border-radius: 10px;
     cursor: grab;
 }
-#quick-preset-container.move-mode:active {
-    cursor: grabbing;
-}
+
+#quick-preset-container.move-mode:active { cursor: grabbing; }
+
 #quick-preset-container.move-mode .quick-preset-btn,
 #quick-preset-container.move-mode .quick-preset-main-btn {
     pointer-events: none;
     opacity: 0.7;
 }
 
-/* =========================================
-   버튼 공통 스타일
-   ========================================= */
 .quick-preset-btn, .quick-preset-main-btn {
     width: var(--qp-size, 50px);
     height: var(--qp-size, 50px);
-    background-color: var(--qp-color, #6b82d8);
+    background-color: var(--qp-color, #5f6fb2); /* !important를 제거하여 JS 설정값이 우선되도록 함 */
     color: white;
     border-radius: 50%;
-    box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+    box-shadow: 0 4px 10px rgba(0,0,0,0.2);
     cursor: pointer;
     display: flex;
     align-items: center;
@@ -59,51 +50,28 @@
     filter: brightness(1.1);
     transform: scale(1.1);
 }
-.quick-preset-btn:active, .quick-preset-main-btn:active {
-    transform: scale(0.95);
-}
 
-/* 메인 버튼(메뉴 아이콘) 스타일 */
-.quick-preset-main-btn {
-    z-index: 2002;
-}
-
-/* =========================================
-   프리셋 리스트 (접힘/펼침 영역)
-   ========================================= */
 .quick-preset-list-wrapper {
     position: absolute;
-    /* 기본(위로 펼치기) */
     bottom: calc(var(--qp-size, 50px) + 15px);
-
     left: 50%;
     transform: translateX(-50%) scaleY(0.8);
     transform-origin: bottom center;
-
     display: flex;
     flex-direction: column;
     gap: 10px;
-
     opacity: 0;
     visibility: hidden;
-
     transition: all 0.2s ease-in-out;
-
     pointer-events: none;
-
-    padding-top: 5px;
-    padding-bottom: 5px;
+    padding: 5px 0;
 }
 
-
-/* [추가됨] 아래로 펼치기 모드 스타일 */
 #quick-preset-container.expand-down .quick-preset-list-wrapper {
-    bottom: auto; /* 기존 위로 펼침 위치 해제 */
-    top: calc(var(--qp-size, 50px) + 15px); /* 버튼 아래로 이동 */
-    transform-origin: top center; /* 애니메이션 기준점 위로 변경 */
-    flex-direction: column; /* 아래로 정렬 (기존 유지) */
+    bottom: auto;
+    top: calc(var(--qp-size, 50px) + 15px);
+    transform-origin: top center;
 }
-
 
 #quick-preset-container:hover .quick-preset-list-wrapper {
     opacity: 1;
@@ -112,94 +80,242 @@
     pointer-events: auto;
 }
 
-
-/* 툴팁 */
-.quick-preset-btn::after {
-    /* (이하 툴팁 스타일은 변경 없음) */
-    content: attr(data-fullname);
-    position: absolute;
-    right: calc(var(--qp-size, 50px) + 15px);
-    top: 50%;
-    transform: translateY(-50%);
-    background: rgba(0,0,0,0.8);
-    color: #fff;
-    padding: 5px 10px;
-    border-radius: 5px;
-    font-size: 14px;
-    white-space: nowrap;
-    opacity: 0;
-    pointer-events: none;
-    transition: opacity 0.2s;
-    z-index: 2001;
-}
-
-/* 컨테이너 위치에 따른 툴팁 방향 자동 조정 */
-#quick-preset-container.pos-left .quick-preset-btn::after {
-    right: auto;
-    left: calc(var(--qp-size, 50px) + 15px);
-}
-
-.quick-preset-btn:hover::after {
-    opacity: 1;
-}
-
-
 /* =========================================
-   설정창 UI
+   설정창 UI (테마 색상: #fade85 & #e5f5eb)
    ========================================= */
-.quick-preset-settings .inline-drawer-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 10px 5px;
-    background: transparent;
-    border-radius: 0;
-    cursor: pointer;
-    margin-bottom: 0;
-    border-bottom: 1px solid var(--smart-theme-border);
+.quick-preset-settings {
+    font-family: 'Segoe UI', Roboto, sans-serif !important;
+    color: #4a4a4a !important;
 }
 .quick-preset-settings .inline-drawer-content {
-    background: rgba(0, 0, 0, 0.1);
-    padding: 15px;
-    border-radius: 0 0 10px 10px;
-    margin-bottom: 15px;
+    background: #ffffff !important;
+    border: 2px solid #c9b86e !important;
+    /* 상하좌우 모든 모서리에 곡률 적용 */
+    border-radius: 15px !important; 
+    padding: 18px !important;
+    box-shadow: 0 8px 20px rgba(201, 184, 110, 0.2) !important;
+    margin-top: -2px; /* 헤더와의 연결 부위를 자연스럽게 겹침 */
 }
 
+/* 토글 스위치 */
+.quick-preset-settings .checkbox_label {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    cursor: pointer !important;
+    padding: 8px 0 !important;
+    width: 100% !important;
+}
+
+.quick-preset-settings input[type="checkbox"] {
+    appearance: none !important;
+    width: 42px !important;
+    height: 22px !important;
+    background: #e0e0e0 !important;
+    border: 1px solid #ccc !important;
+    border-radius: 20px !important;
+    position: relative !important;
+    cursor: pointer !important;
+    transition: all 0.3s ease !important;
+}
+
+.quick-preset-settings input[type="checkbox"]:checked {
+    background: #c9b86e !important;
+    border: 1px solid #b6a75f !important;
+}
+.quick-preset-settings input[type="checkbox"]::before {
+    content: "" !important;
+    position: absolute !important;
+    width: 16px !important;
+    height: 16px !important;
+    background: white !important;
+    border-radius: 50% !important;
+    top: 2px !important;
+    left: 3px !important;
+    transition: all 0.3s ease !important;
+}
+
+.quick-preset-settings input[type="checkbox"]:checked::before {
+    left: 21px !important;
+}
+
+/* 입력창 및 선택창 */
+#quick_preset_selector, 
+#quick_preset_position_mode,
+.quick-preset-settings input[type="number"] {
+    background: #f4f7f5 !important;
+    border: 2px solid #d6ddd8 !important;
+    border-radius: 10px !important;
+    padding: 0 10px !important;
+    height: 38px !important;
+}
+
+#quick_preset_selector:focus, 
+#quick_preset_position_mode:focus { border-color: #c9b86e !important; }
+
+/* 추가 버튼 스타일 */
+#quick_preset_add_btn {
+    background: #fade85 !important;
+    color: #5c5332 !important;
+    font-weight: bold !important;
+    border: none !important;
+    height: 40px !important;
+    width: 100% !important;
+    border-radius: 12px !important;
+    margin-top: 8px !important;
+    cursor: pointer !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center;
+}
+
+#quick_preset_refresh_btn {
+    width: 38px !important;
+    height: 38px !important;
+    min-width: 38px !important;
+    border-radius: 10px !important;
+    background: #fff !important;
+    border: 2px solid #e5f5eb !important;
+    cursor: pointer !important;
+}
+
+/* 목록 UI (세로 리사이징 및 스크롤 설정) */
 .preset-list-container {
-    max-height: 250px;
-    overflow-y: auto;
-    background: rgba(0, 0, 0, 0.1);
-    border: 1px solid var(--smart-theme-border);
-    border-radius: 5px;
-    padding: 5px;
-    margin-top: 10px;
+    min-height: 150px !important; /* 최소 높이 유지 */
+    height: 220px; /* 기본 초기 높이 */
+    max-height: 600px !important; /* 최대 확장 가능 높이 (필요시 더 늘리셔도 됩니다) */
+    
+    /* 리사이징 핸들 활성화 필수 속성 */
+    overflow: auto !important; 
+    resize: vertical; 
+    
+    background: #eef2ef !important;
+    border-radius: 12px !important;
+    border: 1px solid #d6ddd8 !important;
+    padding: 10px !important;
+    margin-top: 10px !important;
+    
+    /* 리사이즈 핸들이 더 잘 보이도록 하단 여백 살짝 추가 */
+    padding-bottom: 15px !important;
 }
+
+/* 리사이즈 핸들 디자인 커스텀 (크롬/엣지/사파리 대응) */
+.preset-list-container::-webkit-resizer {
+    background-image: linear-gradient(135deg, transparent 50%, #c9b86e 50%, #c9b86e 60%, transparent 60%, transparent 70%, #c9b86e 70%);
+    background-size: 10px 10px;
+}
+
 .preset-list-item {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 8px;
-    background: var(--smart-theme-content-bg);
-    border-bottom: 1px solid var(--smart-theme-border);
-    border-radius: 4px;
-    margin-bottom: 5px;
+    display: flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+    padding: 10px !important; /* 내부 여백을 늘려 쾌적하게 변경 */
+    background: #ffffff !important;
+    border-radius: 12px !important;
+    border: 1px solid #d6ddd8 !important;
+    margin-bottom: 8px !important;
+    transition: border-color 0.2s;
 }
-.preset-list-item input[type="text"] {
-    padding: 4px;
-    border: 1px solid var(--smart-theme-border);
-    background: var(--smart-theme-input-bg);
-    color: var(--smart-theme-body-color);
-    border-radius: 4px;
+
+.preset-list-item:hover {
+    border-color: #c9b86e !important;
 }
-.menu_button {
-    padding: 6px 10px;
-    border-radius: 5px;
-    border: 1px solid var(--smart-theme-border);
-    cursor: pointer;
-    background-color: var(--smart-theme-bg);
-    color: var(--smart-theme-body-color);
-    font-size: 0.9em;
+
+/* 목록 내의 입력창(이름 수정 등) 높이 조절 */
+.preset-list-item input {
+    flex: 1;
+    height: 38px !important; /* 기존보다 높게 설정 */
+    padding: 0 10px !important;
+    border: 1px solid #d6ddd8 !important;
+    border-radius: 8px !important;
+    background: #f9fdfb !important;
+    font-size: 14px !important;
 }
-.menu_button:hover {
-    background-color: var(--smart-theme-input-bg);
+
+/* 목록 내 조작 버튼들 (순서 조절, 삭제) 공통 스타일 */
+.preset-list-item button {
+    width: 34px !important;
+    height: 34px !important;
+    min-width: 34px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    border: none !important;
+    border-radius: 8px !important;
+    cursor: pointer !important;
+    transition: all 0.2s !important;
+    font-size: 14px !important;
+}
+
+/* 순서 조절 버튼 (위/아래) */
+.preset-list-item .up-btn, 
+.preset-list-item .down-btn {
+    background: #e5f5eb !important;
+    color: #5f6fb2 !important;
+}
+
+.preset-list-item .up-btn:hover, 
+.preset-list-item .down-btn:hover {
+    background: #d4eadd !important;
+}
+
+/* 삭제 버튼 */
+.preset-list-item .delete-btn {
+    background: #ffebee !important;
+    color: #d32f2f !important;
+}
+
+.preset-list-item .delete-btn:hover {
+    background: #ffcdd2 !important;
+    color: #b71c1c !important;
+}
+
+/* =========================================
+   커스텀 툴팁 (검정 반투명 + 블러 스타일)
+   ========================================= */
+.quick-preset-btn[data-fullname] {
+    position: relative;
+}
+
+.quick-preset-btn[data-fullname]::after {
+    content: attr(data-fullname);
+    position: absolute;
+    /* 버튼 왼쪽에 표시 */
+    right: 130%; 
+    top: 50%;
+    transform: translateY(-50%);
+    
+    /* 배경 및 효과 */
+    background-color: rgba(15, 15, 15, 0.85) !important;
+    backdrop-filter: blur(6px); 
+    -webkit-backdrop-filter: blur(6px);
+    
+    color: #ffffff !important;
+    padding: 10px 16px; /* 여백 증가 */
+    border: 1px solid rgba(255, 255, 255, 0.15) !important;
+    border-radius: 8px;
+    
+    /* 폰트 설정 */
+    font-size: 15px; /* 크기 키움 */
+    font-weight: 600; /* 조금 더 굵게 */
+    white-space: nowrap;
+    
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.2s ease-in-out;
+    pointer-events: none;
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.5);
+    z-index: 2100;
+}
+
+/* 컨테이너가 왼쪽에 있을 때 툴팁을 오른쪽으로 이동 */
+#quick-preset-container.pos-left .quick-preset-btn[data-fullname]::after {
+    right: auto;
+    left: 125%;
+}
+
+/* 호버 시 노출 */
+.quick-preset-btn:hover::after {
+    opacity: 1;
+    visibility: visible;
 }

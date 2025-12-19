@@ -16,18 +16,17 @@ const DEFAULT_SETTINGS = {
     showWandButton: true,
     presetList: [], 
     
-    // 스타일 설정
+    // 스타일 설정 (기본값을 테마 색상인 #fade85로 변경)
     buttonSize: 50,
-    buttonColor: '#6b82d8',
+    buttonColor: '#fade85',
     
     // 위치 설정
     positionMode: 'custom', 
     customPos: { top: null, left: null, right: '20px', bottom: '150px' },
     
     moveMode: false,
-    expandDown: false // [추가] 기본값: 위로 펼침(false)
+    expandDown: false
 };
-
 let settings = {};
 
 // ... (addToWandMenu 등 기존 코드 유지) ...
@@ -96,6 +95,8 @@ function updateFloatingButtons() {
     // CSS 변수 적용
     $container[0].style.setProperty('--qp-size', `${settings.buttonSize}px`);
     $container[0].style.setProperty('--qp-color', settings.buttonColor);
+    // [추가] 테마 보조 색상 변수 주입
+    $container[0].style.setProperty('--qp-theme-soft', '#e5f5eb');
 
     // [추가] 아래로 펼치기 클래스 적용
     if (settings.expandDown) {
@@ -164,10 +165,11 @@ function updateFloatingButtons() {
 
         let tooltipText = (preset.alias && preset.alias.trim() !== '') ? preset.alias : preset.name;
 
-        const btnHtml = `
-            <div class="quick-preset-btn" data-fullname="${tooltipText}" data-index="${index}">
-                <span>${displayText}</span>
-            </div>
+        // [수정] title 속성을 추가하여 브라우저 기본 툴팁이 작동하게 하고, data-fullname으로 커스텀 디자인을 지원함
+		const btnHtml = `
+			<div class="quick-preset-btn" data-fullname="${tooltipText}" data-index="${index}">
+				<span>${displayText}</span>
+			</div>
         `;
         $listWrapper.append(btnHtml);
     });
@@ -230,26 +232,30 @@ function enableDrag($element) {
 
 function applyPreset(presetData) {
     const $stDropdown = $('#settings_preset_openai');
-    const targetName = presetData.name;
+    const targetName = presetData.name; // 이제 이름 문자열이 들어있습니다.
     const displayName = (presetData.alias && presetData.alias.trim() !== '') ? presetData.alias : targetName;
 
     if ($stDropdown.length === 0) {
         toastr.error('Chat Completion 설정을 찾을 수 없습니다.');
         return;
     }
-    
-    $stDropdown.val(targetName);
-    if ($stDropdown.val() !== targetName) {
-        toastr.warning(`프리셋 "${displayName}"(원본: ${targetName})을(를) 찾을 수 없습니다.`);
-        return;
+
+    // 드롭다운 옵션 중 텍스트(이름)가 일치하는 항목을 찾습니다.
+    let foundValue = null;
+    $stDropdown.find('option').each(function() {
+        if ($(this).text().trim() === targetName) {
+            foundValue = $(this).val();
+            return false; // 루프 중단
+        }
+    });
+
+    if (foundValue !== null) {
+        $stDropdown.val(foundValue).trigger('change');
+        toastr.success(`[${displayName}] 적용 완료`);
+    } else {
+        toastr.warning(`프리셋 "${displayName}"을(를) 목록에서 찾을 수 없습니다.`);
     }
-    
-    $stDropdown.trigger('change');
-    toastr.success(`[${displayName}] 적용 완료`);
 }
-
-
-// ... (설정 UI 로직) ...
 
 function syncPresetOptions() {
     const $stDropdown = $('#settings_preset_openai');
@@ -260,10 +266,13 @@ function syncPresetOptions() {
     $myDropdown.append('<option value="">-- 프리셋 선택 --</option>');
 
     $stDropdown.find('option').each(function() {
+        const text = $(this).text().trim();
         const val = $(this).val();
-        const text = $(this).text();
+        
+        // 'gui'와 같이 실제 프리셋이 아닌 항목 제외
         if (val && val !== 'gui') { 
-            $myDropdown.append(new Option(text, val));
+            // 여기서 value에 'text'를 넣음으로써, 인덱스가 아닌 '이름'을 저장하게 합니다.
+            $myDropdown.append(new Option(text, text));
         }
     });
 }
@@ -418,14 +427,23 @@ function onSettingChange() {
     });
 
     $('#quick_preset_add_btn').on('click', () => {
-        const val = $('#quick_preset_selector').val();
-        if (!val) return toastr.warning('선택된 프리셋이 없습니다.');
-        if (settings.presetList.some(p => p.name === val)) return toastr.info('이미 추가된 프리셋입니다.');
+        const val = $('#quick_preset_selector').val(); // 위에서 수정한대로 '이름'이 반환됨
         
+        if (!val) {
+            return toastr.warning('선택된 프리셋이 없습니다.');
+        }
+
+        // 이미 같은 이름의 프리셋이 등록되어 있는지 확인
+        if (settings.presetList.some(p => p.name === val)) {
+            return toastr.info('이미 추가된 프리셋입니다.');
+        }
+        
+        // 이름(val) 기반으로 데이터 저장
         settings.presetList.push({ name: val, alias: '', symbol: '' });
         saveSettingsDebounced();
         renderPresetListUI();
         updateFloatingButtons();
+        toastr.success(`추가됨: ${val}`);
     });
 
     $('#quick_preset_enable').prop('checked', settings.enabled);
