@@ -14,22 +14,22 @@ const extensionFolderPath = `scripts/extensions/third-party/${extensionName}`;
 const DEFAULT_SETTINGS = {
     enabled: true,
     showWandButton: true,
-    presetList: [], 
-    
-    // 스타일 설정 (기본값을 테마 색상인 #fade85로 변경)
+    presetList: [],
+
+    // 스타일 설정
     buttonSize: 50,
     buttonColor: '#fade85',
-    
+    symbolStrokeColor: '#000000',
+
     // 위치 설정
-    positionMode: 'custom', 
+    positionMode: 'custom',
     customPos: { top: null, left: null, right: '20px', bottom: '150px' },
-    
+
     moveMode: false,
     expandDown: false
 };
 let settings = {};
 
-// ... (addToWandMenu 등 기존 코드 유지) ...
 
 async function addToWandMenu() {
     if ($('#quick_preset_wand_button').length > 0) return;
@@ -95,15 +95,13 @@ function updateFloatingButtons() {
     // CSS 변수 적용
     $container[0].style.setProperty('--qp-size', `${settings.buttonSize}px`);
     $container[0].style.setProperty('--qp-color', settings.buttonColor);
-    // [추가] 테마 보조 색상 변수 주입
     $container[0].style.setProperty('--qp-theme-soft', '#e5f5eb');
+    $container[0].style.setProperty('--qp-symbol-stroke', settings.symbolStrokeColor || '#000000');
 
-    // [추가] 아래로 펼치기 클래스 적용
     if (settings.expandDown) {
         $container.addClass('expand-down');
     }
 
-    // 1. 위치 모드 및 앵커 결정 (위쪽 기준인지 아래쪽 기준인지)
     let isAnchorTop = false; 
     let isLeftSide = false;
 
@@ -126,7 +124,6 @@ function updateFloatingButtons() {
             enableDrag($container);
         }
     } else {
-        // 고정 위치 프리셋
         if (settings.positionMode === 'tr') { 
             $container.css({ top: '80px', right: '20px', bottom: 'auto', left: 'auto' });
             isAnchorTop = true; 
@@ -137,7 +134,7 @@ function updateFloatingButtons() {
         } else if (settings.positionMode === 'bl') {
             $container.css({ bottom: '20px', left: '20px', top: 'auto', right: 'auto' });
             isLeftSide = true;
-        } else { // br (default)
+        } else { 
             $container.css({ bottom: '20px', right: '20px', top: 'auto', left: 'auto' });
         }
     }
@@ -165,11 +162,10 @@ function updateFloatingButtons() {
 
         let tooltipText = (preset.alias && preset.alias.trim() !== '') ? preset.alias : preset.name;
 
-        // [수정] title 속성을 추가하여 브라우저 기본 툴팁이 작동하게 하고, data-fullname으로 커스텀 디자인을 지원함
-		const btnHtml = `
-			<div class="quick-preset-btn" data-fullname="${tooltipText}" data-index="${index}">
-				<span>${displayText}</span>
-			</div>
+        const btnHtml = `
+            <div class="quick-preset-btn" data-fullname="${tooltipText}" data-index="${index}">
+                <span class="qp-symbol">${displayText}</span>
+            </div>
         `;
         $listWrapper.append(btnHtml);
     });
@@ -191,7 +187,6 @@ function updateFloatingButtons() {
     });
 }
 
-// ... (enableDrag, applyPreset 등 기존 함수 유지) ...
 
 function enableDrag($element) {
     let isDragging = false;
@@ -232,7 +227,7 @@ function enableDrag($element) {
 
 function applyPreset(presetData) {
     const $stDropdown = $('#settings_preset_openai');
-    const targetName = presetData.name; // 이제 이름 문자열이 들어있습니다.
+    const targetName = presetData.name; 
     const displayName = (presetData.alias && presetData.alias.trim() !== '') ? presetData.alias : targetName;
 
     if ($stDropdown.length === 0) {
@@ -240,12 +235,11 @@ function applyPreset(presetData) {
         return;
     }
 
-    // 드롭다운 옵션 중 텍스트(이름)가 일치하는 항목을 찾습니다.
     let foundValue = null;
     $stDropdown.find('option').each(function() {
         if ($(this).text().trim() === targetName) {
             foundValue = $(this).val();
-            return false; // 루프 중단
+            return false; 
         }
     });
 
@@ -269,9 +263,7 @@ function syncPresetOptions() {
         const text = $(this).text().trim();
         const val = $(this).val();
         
-        // 'gui'와 같이 실제 프리셋이 아닌 항목 제외
         if (val && val !== 'gui') { 
-            // 여기서 value에 'text'를 넣음으로써, 인덱스가 아닌 '이름'을 저장하게 합니다.
             $myDropdown.append(new Option(text, text));
         }
     });
@@ -279,12 +271,53 @@ function syncPresetOptions() {
 
 function renderPresetListUI() {
     const $listContainer = $('#quick_preset_list_container');
+    if (!$listContainer.data('resize-init')) {
+        $listContainer.data('resize-init', true);
+
+        // 핸들 엘리먼트를 컨테이너 바깥 아래에 붙임
+        if ($listContainer.next('.preset-list-resize-handle').length === 0) {
+            $listContainer.after('<div class="preset-list-resize-handle"></div>');
+        }
+        const $handle = $listContainer.next('.preset-list-resize-handle');
+
+        let isResizing = false;
+        let startY, startHeight;
+
+        $handle.on('mousedown', function(e) {
+            isResizing = true;
+            startY = e.clientY;
+            startHeight = $listContainer.outerHeight();
+            e.preventDefault();
+        });
+
+        $(document).on('mousemove.qp_resize', function(e) {
+            if (!isResizing) return;
+            const delta = e.clientY - startY;
+            const newHeight = Math.max(150, Math.min(600, startHeight + delta));
+            $listContainer.css('height', newHeight + 'px');
+        });
+
+        $(document).on('mouseup.qp_resize', function() {
+            isResizing = false;
+        });
+    }
     $listContainer.empty();
 
     if (!settings.presetList || settings.presetList.length === 0) {
         $listContainer.append('<div style="text-align: center; color: #888;">목록이 비어있습니다.</div>');
         return;
     }
+
+    // 교체용 셀렉트 옵션 목록 미리 수집 (SillyTavern 드롭다운에서)
+    const $stDropdown = $('#settings_preset_openai');
+    let allPresetOptions = '';
+    $stDropdown.find('option').each(function() {
+        const text = $(this).text().trim();
+        const val = $(this).val();
+        if (val && val !== 'gui') {
+            allPresetOptions += `<option value="${text}">${text}</option>`;
+        }
+    });
 
     settings.presetList.forEach((preset, index) => {
         const alias = preset.alias || '';
@@ -304,7 +337,9 @@ function renderPresetListUI() {
                 </div>
 
                 <div style="flex:1; display:flex; flex-direction:column; gap:2px;">
-                    <div style="font-size:0.8em; color:#aaa; margin-bottom: 2px;">원본: ${preset.name}</div>
+                    <select class="preset-name-select" data-index="${index}" style="width:100%; margin-bottom:4px; height:32px; font-size:12px; border-radius:8px; border:1px solid #d6ddd8; background:#f9fdfb; padding:0 8px; color:#4a4a4a;">
+                        ${allPresetOptions}
+                    </select>
                     <div style="display:flex; gap: 5px;">
                         <input type="text" class="preset-symbol-input" data-index="${index}" 
                                style="width: 60px; text-align:center;"
@@ -323,12 +358,35 @@ function renderPresetListUI() {
         $listContainer.append(itemHtml);
     });
 
+    // 셀렉트 초기값 세팅 
+    settings.presetList.forEach((preset, index) => {
+        $(`.preset-name-select[data-index="${index}"]`).val(preset.name);
+    });
+
+    // 프리셋 교체 셀렉트 이벤트
+    $('.preset-name-select').on('change', function() {
+        const index = $(this).data('index');
+        const newName = $(this).val();
+        if (!newName) return;
+        // 다른 슬롯에서 이미 쓰고 있는지 확인
+        const duplicate = settings.presetList.some((p, i) => i !== index && p.name === newName);
+        if (duplicate) {
+            toastr.warning('이미 목록에 있는 프리셋입니다.');
+            $(this).val(settings.presetList[index].name); 
+            return;
+        }
+        settings.presetList[index].name = newName;
+        saveSettingsDebounced();
+        updateFloatingButtons();
+        toastr.success(`교체됨: ${newName}`);
+    });
+
     // 이벤트 리스너
     $('.preset-alias-input').on('input', function() {
         const index = $(this).data('index');
         settings.presetList[index].alias = $(this).val();
         saveSettingsDebounced();
-        updateFloatingButtons(); // 실시간 반영
+        updateFloatingButtons();
     });
 
     $('.preset-symbol-input').on('input', function() {
@@ -378,11 +436,11 @@ function onSettingChange() {
     
     settings.buttonSize = parseInt($('#quick_preset_size').val()) || 50;
     settings.buttonColor = $('#quick_preset_color').val();
-    
+    settings.symbolStrokeColor = $('#quick_preset_symbol_stroke_color').val();
+	
     settings.positionMode = $('#quick_preset_position_mode').val();
     settings.moveMode = $('#quick_preset_move_mode').prop('checked');
     
-    // [추가] 아래로 펼치기 값 읽기
     settings.expandDown = $('#quick_preset_expand_down').prop('checked');
 
     if (settings.positionMode === 'custom') {
@@ -404,7 +462,7 @@ function onSettingChange() {
     if (!Array.isArray(settings.presetList)) settings.presetList = [];
     if (!settings.customPos) settings.customPos = DEFAULT_SETTINGS.customPos;
     if (settings.showWandButton === undefined) settings.showWandButton = true;
-    if (settings.expandDown === undefined) settings.expandDown = false; // [추가] 초기화
+    if (settings.expandDown === undefined) settings.expandDown = false; 
 
     if (['br', 'bl'].includes(settings.positionMode)) {
         settings.positionMode = 'custom';
@@ -417,28 +475,40 @@ function onSettingChange() {
     const settingsHtml = await $.get(`${extensionFolderPath}/settings.html`);
     $("#extensions_settings2").append(settingsHtml);
 
-    // [수정] 이벤트 리스너에 #quick_preset_expand_down 추가
     $('#quick_preset_enable, #quick_preset_show_wand, #quick_preset_move_mode, #quick_preset_expand_down').on('change', onSettingChange);
-    $('#quick_preset_size, #quick_preset_color, #quick_preset_position_mode').on('input change', onSettingChange);
+    $('#quick_preset_size, #quick_preset_position_mode').on('input change', onSettingChange);
+
+    $('#quick_preset_color').on('input', function() {
+        settings.buttonColor = $(this).val();
+        const $c = $('#quick-preset-container');
+        if ($c.length) $c[0].style.setProperty('--qp-color', settings.buttonColor);
+    });
+    $('#quick_preset_color').on('change', onSettingChange);
+
+    $('#quick_preset_symbol_stroke_color').on('input', function() {
+        settings.symbolStrokeColor = $(this).val();
+        const $c = $('#quick-preset-container');
+        if ($c.length) $c[0].style.setProperty('--qp-symbol-stroke', settings.symbolStrokeColor);
+    });
+    $('#quick_preset_symbol_stroke_color').on('change', onSettingChange);
     
     $('#quick_preset_refresh_btn').on('click', () => {
         syncPresetOptions();
+        renderPresetListUI();
         toastr.info('프리셋 목록 갱신됨');
     });
 
     $('#quick_preset_add_btn').on('click', () => {
-        const val = $('#quick_preset_selector').val(); // 위에서 수정한대로 '이름'이 반환됨
+        const val = $('#quick_preset_selector').val(); 
         
         if (!val) {
             return toastr.warning('선택된 프리셋이 없습니다.');
         }
 
-        // 이미 같은 이름의 프리셋이 등록되어 있는지 확인
         if (settings.presetList.some(p => p.name === val)) {
             return toastr.info('이미 추가된 프리셋입니다.');
         }
         
-        // 이름(val) 기반으로 데이터 저장
         settings.presetList.push({ name: val, alias: '', symbol: '' });
         saveSettingsDebounced();
         renderPresetListUI();
@@ -450,10 +520,10 @@ function onSettingChange() {
     $('#quick_preset_show_wand').prop('checked', settings.showWandButton);
     $('#quick_preset_size').val(settings.buttonSize);
     $('#quick_preset_color').val(settings.buttonColor);
+    $('#quick_preset_symbol_stroke_color').val(settings.symbolStrokeColor || '#000000');
     $('#quick_preset_position_mode').val(settings.positionMode);
     $('#quick_preset_move_mode').prop('checked', settings.moveMode);
     
-    // [추가] 초기 체크박스 상태 반영
     $('#quick_preset_expand_down').prop('checked', settings.expandDown);
     
     if (settings.positionMode === 'custom') $('#quick_preset_move_toggle_area').show();

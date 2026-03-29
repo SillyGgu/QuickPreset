@@ -30,27 +30,43 @@
 .quick-preset-btn, .quick-preset-main-btn {
     width: var(--qp-size, 50px);
     height: var(--qp-size, 50px);
-    background-color: var(--qp-color, #5f6fb2); /* !important를 제거하여 JS 설정값이 우선되도록 함 */
+    background-color: var(--qp-color, #5f6fb2);
     color: white;
     border-radius: 50%;
-    box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+    box-shadow:
+        inset 0 2px 3px rgba(255,255,255,0.45),
+        inset 0 -2px 3px rgba(0,0,0,0.18),
+        0 3px 8px rgba(0,0,0,0.2),
+        0 1px 0 rgba(0,0,0,0.15);
     cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: calc(var(--qp-size, 50px) * 0.4); 
+    font-size: calc(var(--qp-size, 50px) * 0.4);
     font-weight: bold;
-    transition: transform 0.2s, filter 0.2s;
+    transition: transform 0.15s, box-shadow 0.15s;
     user-select: none;
     position: relative;
     flex-shrink: 0;
 }
 
 .quick-preset-btn:hover, .quick-preset-main-btn:hover {
-    filter: brightness(1.1);
-    transform: scale(1.1);
+    transform: scale(1.07);
+    box-shadow:
+        inset 0 2px 3px rgba(255,255,255,0.45),
+        inset 0 -2px 3px rgba(0,0,0,0.18),
+        0 5px 12px rgba(0,0,0,0.28),
+        0 1px 0 rgba(0,0,0,0.15);
 }
 
+.quick-preset-btn:active, .quick-preset-main-btn:active {
+    transform: scale(0.96) translateY(1px);
+    box-shadow:
+        inset 0 1px 2px rgba(255,255,255,0.35),
+        inset 0 -1px 2px rgba(0,0,0,0.12),
+        0 1px 4px rgba(0,0,0,0.18),
+        0 0px 0 rgba(0,0,0,0.1);
+}
 .quick-preset-list-wrapper {
     position: absolute;
     bottom: calc(var(--qp-size, 50px) + 15px);
@@ -90,11 +106,10 @@
 .quick-preset-settings .inline-drawer-content {
     background: #ffffff !important;
     border: 2px solid #c9b86e !important;
-    /* 상하좌우 모든 모서리에 곡률 적용 */
     border-radius: 15px !important; 
     padding: 18px !important;
     box-shadow: 0 8px 20px rgba(201, 184, 110, 0.2) !important;
-    margin-top: -2px; /* 헤더와의 연결 부위를 자연스럽게 겹침 */
+    margin-top: -2px; 
 }
 
 /* 토글 스위치 */
@@ -179,37 +194,52 @@
     cursor: pointer !important;
 }
 
-/* 목록 UI (세로 리사이징 및 스크롤 설정) */
+/* 목록 UI */
 .preset-list-container {
-    min-height: 150px !important; /* 최소 높이 유지 */
-    height: 220px; /* 기본 초기 높이 */
-    max-height: 600px !important; /* 최대 확장 가능 높이 (필요시 더 늘리셔도 됩니다) */
-    
-    /* 리사이징 핸들 활성화 필수 속성 */
-    overflow: auto !important; 
-    resize: vertical; 
-    
+    min-height: 150px !important;
+    height: 220px;
+    max-height: 600px !important;
+    overflow: auto !important;
+    resize: none;
     background: #eef2ef !important;
     border-radius: 12px !important;
     border: 1px solid #d6ddd8 !important;
     padding: 10px !important;
+    padding-bottom: 10px !important;
     margin-top: 10px !important;
-    
-    /* 리사이즈 핸들이 더 잘 보이도록 하단 여백 살짝 추가 */
-    padding-bottom: 15px !important;
+    position: relative;
 }
 
-/* 리사이즈 핸들 디자인 커스텀 (크롬/엣지/사파리 대응) */
-.preset-list-container::-webkit-resizer {
-    background-image: linear-gradient(135deg, transparent 50%, #c9b86e 50%, #c9b86e 60%, transparent 60%, transparent 70%, #c9b86e 70%);
-    background-size: 10px 10px;
+.preset-list-resize-handle {
+    width: 100%;
+    height: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: ns-resize;
+    margin-top: 4px;
+    flex-shrink: 0;
+}
+
+.preset-list-resize-handle::before {
+    content: '';
+    width: 40px;
+    height: 5px;
+    border-radius: 3px;
+    background: #c9b86e;
+    opacity: 0.6;
+    transition: opacity 0.2s;
+}
+
+.preset-list-resize-handle:hover::before {
+    opacity: 1;
 }
 
 .preset-list-item {
     display: flex !important;
     align-items: center !important;
     gap: 8px !important;
-    padding: 10px !important; /* 내부 여백을 늘려 쾌적하게 변경 */
+    padding: 10px !important; 
     background: #ffffff !important;
     border-radius: 12px !important;
     border: 1px solid #d6ddd8 !important;
@@ -221,10 +251,9 @@
     border-color: #c9b86e !important;
 }
 
-/* 목록 내의 입력창(이름 수정 등) 높이 조절 */
 .preset-list-item input {
     flex: 1;
-    height: 38px !important; /* 기존보다 높게 설정 */
+    height: 38px !important; 
     padding: 0 10px !important;
     border: 1px solid #d6ddd8 !important;
     border-radius: 8px !important;
@@ -232,7 +261,7 @@
     font-size: 14px !important;
 }
 
-/* 목록 내 조작 버튼들 (순서 조절, 삭제) 공통 스타일 */
+/* 목록 내 조작 버튼들 공통 스타일 */
 .preset-list-item button {
     width: 34px !important;
     height: 34px !important;
@@ -280,7 +309,6 @@
 .quick-preset-btn[data-fullname]::after {
     content: attr(data-fullname);
     position: absolute;
-    /* 버튼 왼쪽에 표시 */
     right: 130%; 
     top: 50%;
     transform: translateY(-50%);
@@ -291,13 +319,12 @@
     -webkit-backdrop-filter: blur(6px);
     
     color: #ffffff !important;
-    padding: 10px 16px; /* 여백 증가 */
+    padding: 10px 16px; 
     border: 1px solid rgba(255, 255, 255, 0.15) !important;
     border-radius: 8px;
     
-    /* 폰트 설정 */
-    font-size: 15px; /* 크기 키움 */
-    font-weight: 600; /* 조금 더 굵게 */
+    font-size: 15px; 
+    font-weight: 600; 
     white-space: nowrap;
     
     opacity: 0;
@@ -308,12 +335,19 @@
     z-index: 2100;
 }
 
-/* 컨테이너가 왼쪽에 있을 때 툴팁을 오른쪽으로 이동 */
 #quick-preset-container.pos-left .quick-preset-btn[data-fullname]::after {
     right: auto;
     left: 125%;
 }
-
+.qp-symbol {
+    display: block;
+    line-height: 1;
+    filter:
+        drop-shadow(0.8px 0 0 var(--qp-symbol-stroke, #000000))
+        drop-shadow(-0.8px 0 0 var(--qp-symbol-stroke, #000000))
+        drop-shadow(0 0.8px 0 var(--qp-symbol-stroke, #000000))
+        drop-shadow(0 -0.8px 0 var(--qp-symbol-stroke, #000000));
+}
 /* 호버 시 노출 */
 .quick-preset-btn:hover::after {
     opacity: 1;
