@@ -170,6 +170,10 @@ function updateFloatingButtons() {
         $listWrapper.append(btnHtml);
     });
 
+    if (settings.presetList.length > 6) {
+        $listWrapper.addClass('qp-scrollable');
+    }
+
     $container.append($listWrapper);
     $container.append($mainBtn);
 
@@ -185,8 +189,41 @@ function updateFloatingButtons() {
         const presetData = settings.presetList[index];
         applyPreset(presetData);
     });
-}
 
+    $container.find('.quick-preset-btn').on('mouseenter', function() {
+        const $wrapper = $(this).closest('.quick-preset-list-wrapper');
+        if (!$wrapper.hasClass('qp-scrollable')) return;
+
+        const fullname = $(this).attr('data-fullname');
+        if (!fullname) return;
+
+        const rect = this.getBoundingClientRect();
+        const isLeftSide = $container.hasClass('pos-left');
+        const $tooltip = $(`<div class="qp-js-tooltip"></div>`).text(fullname).appendTo('body');
+
+        const tooltipWidth = $tooltip.outerWidth();
+        const gap = 14;
+        let leftPos;
+        if (isLeftSide) {
+            leftPos = rect.right + gap;
+        } else {
+            leftPos = rect.left - gap - tooltipWidth;
+        }
+
+        $tooltip.css({
+            top: rect.top + (rect.height / 2),
+            left: leftPos
+        });
+
+        $(this).data('qp-tooltip', $tooltip);
+    }).on('mouseleave', function() {
+        const $tooltip = $(this).data('qp-tooltip');
+        if ($tooltip) {
+            $tooltip.remove();
+            $(this).removeData('qp-tooltip');
+        }
+    });
+}
 
 function enableDrag($element) {
     let isDragging = false;

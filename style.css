@@ -82,7 +82,23 @@
     pointer-events: none;
     padding: 5px 0;
 }
+.quick-preset-list-wrapper.qp-scrollable {
+    max-height: calc((var(--qp-size, 50px) * 6) + 80px);
+    overflow-y: auto;
+    overflow-x: hidden;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    padding: 15px 20px;
+}
 
+.quick-preset-list-wrapper.qp-scrollable::-webkit-scrollbar {
+    display: none;
+}
+
+/* 스크롤 목록 안에서는 CSS 툴팁 대신 JS 툴팁을 사용하므로 기존 툴팁은 비활성화 */
+.quick-preset-list-wrapper.qp-scrollable .quick-preset-btn[data-fullname]::after {
+    content: none;
+}
 #quick-preset-container.expand-down .quick-preset-list-wrapper {
     bottom: auto;
     top: calc(var(--qp-size, 50px) + 15px);
@@ -352,4 +368,21 @@
 .quick-preset-btn:hover::after {
     opacity: 1;
     visibility: visible;
+}
+.qp-js-tooltip {
+    position: fixed;
+    z-index: 999999;
+    background-color: rgba(15, 15, 15, 0.85);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    color: #ffffff;
+    padding: 10px 16px;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 8px;
+    font-size: 15px;
+    font-weight: 600;
+    white-space: nowrap;
+    pointer-events: none;
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.5);
+    transform: translateY(-50%);
 }
